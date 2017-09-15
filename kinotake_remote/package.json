@@ -1,0 +1,9 @@
+{
+  "name": "kinotake_remote",
+  "version": "1.0.0",
+  "description": "",
+  "devDependencies": {
+    "johnny-five": "^0.11.6",
+    "socket.io": "^2.0.3"
+  }
+}
