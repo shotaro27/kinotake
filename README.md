@@ -1,5 +1,12 @@
 # きのこ・たけのこにょきにょき対決!
 
+## 内容
+
+1. `kinotake_remote`フォルダ
+	- サーバーの`arduinode-johnny-five.js`が入ってます。
+2. `kinotakeproject`フォルダ
+	- `enchant.js`とゲーム部分の`main2.js`があり、ゲームに使う画像や音が入ってます。
+
 ## 準備
 
 1. Google Chromeをインストール
