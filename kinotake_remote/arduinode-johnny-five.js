@@ -38,7 +38,7 @@ var urlParser = require('url'),
 			filepath += "kino-ru.png";
 			break;
 		case "/kino.png":
-			filepath += "kino.png";
+			filepath += "kino4.png";
 			break;
 		case "/kinoback.png":
 			filepath += "kinoback.png";
@@ -80,7 +80,7 @@ var urlParser = require('url'),
 			filepath += "take-ru.png";
 			break;
 		case "/take.png":
-			filepath += "take.png";
+			filepath += "take4.png";
 			break;
 		case "/takeback.png":
 			filepath += "takeback.png";
@@ -126,6 +126,12 @@ var urlParser = require('url'),
 			break;
 		case "/syourinouta.mp3":
 			filepath += "syourinouta.mp3";
+			break;
+		case "/sosa.png":
+			filepath += "sosa.png";
+			break;
+		case "/ehuki.png":
+			filepath += "ehuki.png";
 			break;
 		default:
 			filepath += "kinoko1.html";

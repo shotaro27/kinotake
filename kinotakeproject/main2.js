@@ -15,8 +15,10 @@ window.onload = function () {
 			console.log('Initialized');
 			console.log('hello ' + enchant.ENV.BROWSER);
 			console.log('enchantjsのバージョン：' + enchant.ENV.VERSION);
-			var kpoint = readCookie('KPOINT'), tpoint = readCookie('TPOINT');
-			var core = new Core(window.innerWidth, window.innerHeight);
+			var kp = readCookie('KPOINT'), tp = readCookie('TPOINT'),
+				kpoint = (kp == void 0) ? 0 : kp,
+				tpoint = (tp == void 0) ? 0 : tp,
+				core = new Core(window.innerWidth, window.innerHeight);
 			core.fps = 24;
 			core.preload(
 				'kino.png', 'take.png', 'star.png',
@@ -27,17 +29,19 @@ window.onload = function () {
 				'takecook.png', 'kinoenemy.png', 'congratulation.png',
 				'takeenemy.png', 'hikari.png', 'nice.png',
 				'good.png', 'great.png', 'score.png',
-				'hukidasi.png', 'start.png', "modoru.png"
+				'hukidasi.png', 'start.png', 'modoru.png',
+				'sosa.png', 'ehuki.png'
 			);
 			core.onload = function () {
 				var game, start, clear, timeup,
 					kinoko = [], takenoko = [], i = 0,
 					CharaTop = Class.create(Sprite, {
-						initialize: function (x, y, kt, w, h) {
+						initialize: function (x, y, kt, w, h, f) {
 							Sprite.call(this, w, h);
 							this.x = x;
 							this.y = y;
 							this.image = core.assets[kt + '.png'];
+							this.frame = f;
 							start.addChild(this);
 						}
 					}),
@@ -53,10 +57,35 @@ window.onload = function () {
 							start.addChild(this);
 						}
 					}),
+					Chara = Class.create(Sprite, {
+						initialize: function (x, y, kt, w, h, f) {
+							Sprite.call(this, w, h);
+							this.x = x;
+							this.y = y;
+							this.image = core.assets[kt + '.png'];
+							this.frame = f;
+							game.addChild(this);
+						}
+					}),
+					Text = Class.create(Label, {
+						initialize: function (y, c, t) {
+							Label.call(this);
+							this.x = 1000;
+							this.y = y + 10;
+							this.color = c;
+							this.font = '40px Hiragino Maru Gothic Pro';
+							this.text = t;
+							this.width = 400;
+							this.height = 100;
+							this.textAlign = "right";
+							game.addChild(this);
+						}
+					}),
 					startback, moji, ktokuten, ttokuten, kino_ru, take_ru, ktsw,
 					k = [], t = [], sentaku, kttoggle = false, ok = false, kita,
 					gamescene, kttama, kttr1, kttr2, nobi, ktenemy, hikari = [],
-					kinotake = [], kintak = 0, l, kiotae, score, h, modoru,
+					kinotake = [], kintak = 0, l, kiotae, score, h, modoru, sm = 0,
+					now, ktstar = [], mode, ktok, kth, kitaa,
 					song = function (audioname, type) {
 						return enchant.DOMSound.load(audioname + "." + type, "audio/" + type, function(){}, function(){});
 					},
@@ -70,32 +99,45 @@ window.onload = function () {
 					kurov = song("bu", "m4a"),
 					countv = song("321", 'm4a'),
 					gstartv = song("start", "mp3");
-				function gameinit(kt) {
+				var icon = [], n = 1, sw = true;
+				function tama(data, scene) {
+					if (core.currentScene == game || core.currentScene == start) {
+						switch (data) {
+							case 'on':
+								kita.frame = 1; //+ sm;
+								kita.tl
+									.delay(20)
+									.then(function () {
+										kita.frame = 0; //+ sm;
+									});
+								if (scene) {
+									icon[n] = new Chara(250, kita.y + 70 + sm * 30, kttama, 70, 50, 54);
+								} else {
+									icon[n] = new CharaTop(250, kita.y + 70 + sm * 30, kttama, 70, 50, 54);
+								}
+								icon[n].tl
+									.moveX(core.width + 10, (core.width + 10) / core.fps / 3 + sm * 12);
+								n++;
+								break;
+							default:
+								if (data != "enter") {
+									if (data >= 10 && data <= 30) {
+										kita.y = core.height - 280 -
+											(Math.floor(data) - 10) * ((core.height - 280) / 15);
+									} else {
+										if (data < 10) {
+											kita.y = core.height - 280;
+										} else {
+											kita.y = 0;
+										}
+									}
+								}
+								break;
+						}
+					}
+				}
+				function gameinit(kt, md) {
 					game = new Scene();
-					var Chara = Class.create(Sprite, {
-							initialize: function (x, y, kt, w, h, f) {
-								Sprite.call(this, w, h);
-								this.x = x;
-								this.y = y;
-								this.image = core.assets[kt + '.png'];
-								this.frame = f;
-								game.addChild(this);
-							}
-						}),
-						Text = Class.create(Label, {
-							initialize: function (y, c, t) {
-								Label.call(this);
-								this.x = 1000;
-								this.y = y + 10;
-								this.color = c;
-								this.font = '40px Hiragino Maru Gothic Pro';
-								this.text = t;
-								this.width = 400;
-								this.height = 100;
-								this.textAlign = "right";
-								game.addChild(this);
-							}
-						});
 					if (kt) {
 						console.log("kinoko");
 						gamescene = new Chara(0, 0, "kinoback", 1440, 900, 0);
@@ -115,40 +157,9 @@ window.onload = function () {
 						kita = new Chara(50, 50, "take", 200, 280, 0);
 						kttama = "taketama";
 					}
-					var icon = [], n = 1, sw = true;
-					function tama (data) {
-						if (core.currentScene == game) {
-							switch (data) {
-							case 'on':
-								kita.frame = 1;
-								kita.tl
-								.delay(20)
-								.then(function(){
-									kita.frame = 0;
-								});
-								icon[n] = new Chara(250, kita.y + 70, kttama, 70, 50, 54);
-								icon[n].tl
-								.moveX(core.width + 10, (core.width + 10) / core.fps / 3);
-								n++;
-								break;
-							default:
-								if (data != "enter") {
-									if (data >= 10 && data <= 30) {
-										kita.y = core.height - 280 -
-										(Math.floor(data) - 10) * ((core.height - 280) / 20);
-									} else {
-										if (data < 10) {
-											kita.y = core.height - 280;
-										} else {
-											kita.y = 0;
-										}
-									}
-								}
-								break;
-							}
-						}
-					}
-					remote.on('emit_from_server', tama);
+					remote.on('emit_from_server', function(data) {
+						tama(data, true);
+					});
 					icon[0] = new Chara(core.width + 10, 0, kttama, 16, 16, 54);
 					var count = new Chara(120, 200, "start", 1200, 500, 0);
 					kttr1.scaleX = 0.1;
@@ -173,6 +184,7 @@ window.onload = function () {
 							count.frame = 3;
 							countv.stop();
 							gstartv.play();
+							sm = 0;
 						},
 						96: function () {
 							game.removeChild(count);
@@ -188,6 +200,24 @@ window.onload = function () {
 							game.removeChild(hikari[2]);
 							gamev.play();
 							var time = 60, ssf = core.frame;
+							/*kita.on('enterframe', function () {
+								if (this.within(ktenemy, 200)) {
+									if (sm != 2) {
+										//sm = 2;
+										this.frame = 2;
+										this.tl.delay(sec(5)).then(function () {
+											//sm = 0;
+											this.frame = 0;
+										});
+										kitaa = new Chara(this.x, this.y, "star", 120, 120, 7);
+										kitaa.tl
+											.fadeOut(8)
+											.and()
+											.scaleTo(2, 2, 8)
+											.moveY(core.height + 50, 0);
+									}
+								}
+							});*/
 							label2.on('enterframe',
 								function () {
 									time = (60 - ((core.frame - ssf) / core.fps)).toFixed(2);
@@ -199,27 +229,39 @@ window.onload = function () {
 									}
 								}
 							);
-							var ex = rand(10) + 10, r = 5, d = 0, ey = rand(10) + 10;
-							ktenemy.on('enterframe', function () {
-								this.x += ex;
-								if (this.x <= -300 || this.x >= core.width + 500) {
-									ex *= -1;
-								}
-								this.y += ey;
-								if (this.y <= -500 || this.y >= core.height + 500) {
-									ey *= -1;
-								}
-							});
+							if (mode != 0) {
+								var ex = rand(10) + md * 10, r = 5, d = 0, ey = rand(10) + md * 10;
+								//var ex = 10, r = 5, d = 0, ey = 10;
+								ktenemy.on('enterframe', function () {
+									this.x += ex / (sm + 1);
+									if (this.x <= -300 || this.x >= core.width + 500) {
+										ex *= -1;
+									}
+									this.y += ey / (sm + 1);
+									if (this.y <= -500 || this.y >= core.height + 500) {
+										ey *= -1;
+									}
+									/*for (var k = 0; k <= n; k++) {
+										if (this.intersect(icon[n])) {
+											this.tl
+											.scaleTo(0,0,6)
+											.then(function () {
+												add(this.x, this.y);
+												kintak++;
+											});
+										}
+									}*/
+								});
+							}
 							game.addChild(kita);
 							game.addChild(label2);
 							game.addChild(label3);
-							function add() {
-								kinotake[kintak] = new Chara(rand(core.width - 500) + 200,
-								rand(core.height - kita.height), "star", 120, 120, rand(2));
+							function add(xx, yy) {
+								kinotake[kintak] = new Chara(xx, yy, "star", 120, 120, rand(2));
 								var h = true;
 								var fr = kinotake[kintak].frame;
-								kinotake[kintak].scaleX=0.75;
-								kinotake[kintak].scaleY=0.75;
+								kinotake[kintak].scaleX = 0.75;
+								kinotake[kintak].scaleY = 0.75;
 								var f = 0;
 								var wi = 70;
 								for (l = 0; l < kinotake.length - 1; l++) {
@@ -230,89 +272,89 @@ window.onload = function () {
 											l = 0;
 											f++;
 										} else {
-											f=0;
+											f = 0;
 											wi--;
 										}
 									}
 								}
 								kinotake[kintak].on('enterframe',
-								function () {
-									for (var j = 0; j <= n; j++) {
-										if (this.intersect(icon[j]) && h){
-											if (this.frame == 3) {
-												point -= 10;
-												label3.text = point;
-												icon[j].x = core.width + 10;
-												game.removeChild(icon[j]);
-												icon[j] = 0;
-												this.frame = 7;
-												h = false;
-												nobi = 0.01;
-												kurov.stop();
-												kurov.play();
-												kttr1.tl
-												.scaleTo(kttr1.scaleX - nobi, kttr1.scaleY - nobi, 4)
-												.and()
-												.moveY(kttr1.y + 400 * nobi, 4);
-												kttr2.tl
-												.scaleTo(kttr2.scaleX - nobi, kttr2.scaleY - nobi, 4)
-												.and()
-												.moveY(kttr2.y + 400 * nobi, 4);
-											} else {
-												point += 10;
-												label3.text = point;
-												icon[j].x = core.width + 10;
-												this.frame += 4;
-												h = false;
-												if (point >= 1000) {
-													remote.removeEventListener('emit_from_server', tama);
-													gamev.stop();
-													clearinit(kt, parseInt(time));
-													point = 0;
+									function () {
+										for (var j = 0; j <= n; j++) {
+											if (this.intersect(icon[j]) && h) {
+												if (this.frame == 3) {
+													point -= 10;
+													label3.text = point;
+													icon[j].x = core.width + 10;
+													game.removeChild(icon[j]);
+													icon[j] = 0;
+													this.frame = 7;
+													h = false;
+													nobi = 0.01;
+													kurov.stop();
+													kurov.play();
+													kttr1.tl
+														.scaleTo(kttr1.scaleX - nobi, kttr1.scaleY - nobi, 4)
+														.and()
+														.moveY(kttr1.y + 400 * nobi, 4);
+													kttr2.tl
+														.scaleTo(kttr2.scaleX - nobi, kttr2.scaleY - nobi, 4)
+														.and()
+														.moveY(kttr2.y + 400 * nobi, 4);
+												} else {
+													point += ((sm == 0) ? 10 : 5);
+													label3.text = point;
+													icon[j].x = core.width + 10;
+													this.frame += 4;
+													h = false;
+													if (point >= 1000) {
+														remote.removeEventListener('emit_from_server', tama);
+														gamev.stop();
+														clearinit(kt, parseInt(time));
+														point = 0;
+													}
+													nobi = 0.01;
+													tamav.stop();
+													tamav.play();
+													kttr1.tl
+														.scaleTo(kttr1.scaleX + nobi, kttr1.scaleY + nobi, 4)
+														.and()
+														.moveY(kttr1.y - 400 * nobi, 4);
+													kttr2.tl
+														.scaleTo(kttr2.scaleX + nobi, kttr2.scaleY + nobi, 4)
+														.and()
+														.moveY(kttr2.y - 400 * nobi, 4);
+													game.addChild(hikari[fr]);
+													hikari[fr].y = kttr1.y * 1.1;
+													hikari[fr].scaleX = kttr2.scaleX;
+													hikari[fr].scaleY = kttr2.scaleY;
+													hikari[fr].tl
+														.fadeTo(0.5, 15)
+														.fadeOut(15)
+														.removeFromScene();
 												}
-												nobi = 0.01;
-												tamav.stop();
-												tamav.play();
-												kttr1.tl
-												.scaleTo(kttr1.scaleX + nobi, kttr1.scaleY + nobi, 4)
-												.and()
-												.moveY(kttr1.y - 400 * nobi, 4);
-												kttr2.tl
-												.scaleTo(kttr2.scaleX + nobi, kttr2.scaleY + nobi, 4)
-												.and()
-												.moveY(kttr2.y - 400 * nobi, 4);
-												game.addChild(hikari[fr]);
-												hikari[fr].y = kttr1.y * 1.1;
-												hikari[fr].scaleX = kttr2.scaleX;
-												hikari[fr].scaleY = kttr2.scaleY;
-												hikari[fr].tl
-												.fadeTo(0.5, 15)
-												.fadeOut(15)
-												.removeFromScene();
+												this.scale(0, 0);
+												this.opacity = 0.7;
+												this.tl
+													.fadeOut(8)
+													.and()
+													.scaleTo(2, 2, 8)
+													.moveY(core.height + 50, 0);
 											}
-											this.scale(0, 0);
-											this.opacity = 0.7;
-											this.tl
-											.fadeOut(8)
-											.and()
-											.scaleTo(2, 2, 8)
-											.moveY(core.height + 50, 0);
 										}
-									}
-									if (this.intersect(ktenemy)){
-										this.frame = 3;
-										this.tl
-										.delay(200)
-										.then(function () {
-											this.frame = fr;
-										});
-									}
-									this.rotate(1);
-								});
+										if (this.intersect(ktenemy)) {
+											this.frame = 3;
+											this.tl
+												.delay(200)
+												.then(function () {
+													this.frame = fr;
+												});
+										}
+										this.rotate(1);
+									});
 							}
 							icon[0].tl
-							.then(add)
 							.then(function () {
+								add(rand(core.width - 500) + 200, rand(core.height - kita.height * 2) + kita.height, true);
 								kintak++;
 							})
 							.delay(12)
@@ -337,20 +379,33 @@ window.onload = function () {
 						console.log(e);
 					} finally {}
 					start = new Scene();
-					startback = new CharaTop(-780, 0, 'back01', 3000, 900);
-					moji = new CharaTop(0, 0, 'back02', 1440, 900);
+					startback = new CharaTop(-780, 0, 'back01', 3000, 900, 0);
+					moji = new CharaTop(0, 0, 'back02', 1440, 900, 0);
 					ktokuten = new StartText(395, 755, '#cff', kp, 70, 'center');
 					ttokuten = new StartText(740, 755, '#cff', tp, 70, 'center');
 					sentaku = false;
 					kttoggle = false;
 					ok = false;
-					kino_ru = new CharaTop(0, 0, 'kino-ru', 1440, 900);
-					take_ru = new CharaTop(0, 0, 'take-ru', 1440, 900);
-					kinoko[i] = new CharaTop(-90, 250, 'kinotake', 600, 700);
-					takenoko[i] = new CharaTop(920, 250, 'kinotake', 600, 700);
+					kino_ru = new CharaTop(0, 0, 'kino-ru', 1440, 600, 0);
+					take_ru = new CharaTop(0, 0, 'take-ru', 1440, 600, 0);
+					ktok = new CharaTop(610, 650, 'sosa', 220, 220, 0);
+					kth = new CharaTop(610, 650, 'sosa', 220, 220, 2);
+					kinoko[i] = new CharaTop(-90, 250, 'kinotake', 600, 700, 0);
+					takenoko[i] = new CharaTop(920, 250, 'kinotake', 600, 700, 0);
+					ehuki = new CharaTop(1000, 325, "ehuki", 500, 300, 0);
+					ehuki2 = new CharaTop(1000, 50, "ehuki", 500, 300, 1);
+					ehuki3 = new CharaTop(1000, -75, "ehuki", 500, 300, 2);
+					ehuki.scale(0.4, 0.4);
+					ehuki2.scale(0.4, 0.4);
+					ehuki3.scale(0.4, 0.4);
 					startv.play();
 					start.removeChild(kino_ru);
 					start.removeChild(take_ru);
+					start.removeChild(ktok);
+					start.removeChild(kth);
+					start.removeChild(ehuki);
+					start.removeChild(ehuki2);
+					start.removeChild(ehuki3);
 					if (kpoint - tpoint > 5000) {
 						k = [3, 4];
 						t = [5, 6];
@@ -398,40 +453,117 @@ window.onload = function () {
 					.loop();
 					ktsw = true;
 					sentaku = false;
+					now = 0;
+					mode = 3;
 					function gogame(data) {
 						if (core.currentScene == start) {
 							if (data == 'on') {
-								if (ktsw) {
-									startback.tl.moveX(0, 15);
-									ktsw = false;
-									sentaku = true;
-									start.removeChild(takenoko[i]);
-									start.removeChild(moji);
-									start.addChild(kinoko[i]);
-									kinoko[i].tl.moveX(100, 15);
-									start.removeChild(take_ru);
-									start.addChild(kino_ru);
-									start.removeChild(ktokuten);
-									start.removeChild(ttokuten);
-								} else {
-									startback.tl.moveX(-1560, 15);
-									ktsw = true;
-									sentaku = true;
-									start.removeChild(kinoko[i]);
-									start.removeChild(moji);
-									start.addChild(takenoko[i]);
-									takenoko[i].tl.moveX(720, 15);
-									start.removeChild(kino_ru);
-									start.addChild(take_ru);
-									start.removeChild(ktokuten);
-									start.removeChild(ttokuten);
+								switch (now) {
+									case 0:
+										if (ktsw) {
+											startback.tl.moveX(0, 15);
+											ktsw = false;
+											sentaku = true;
+											start.removeChild(takenoko[i]);
+											start.removeChild(moji);
+											start.addChild(kinoko[i]);
+											kinoko[i].tl.moveX(100, 15);
+											start.removeChild(take_ru);
+											start.addChild(kino_ru);
+											start.addChild(ktok);
+											start.addChild(kth);
+											ktok.x = 1020;
+											kth.x = 800;
+											kth.frame = 2;
+											start.removeChild(ktokuten);
+											start.removeChild(ttokuten);
+										} else {
+											startback.tl.moveX(-1560, 15);
+											ktsw = true;
+											sentaku = true;
+											start.removeChild(kinoko[i]);
+											start.removeChild(moji);
+											start.addChild(takenoko[i]);
+											takenoko[i].tl.moveX(720, 15);
+											start.removeChild(kino_ru);
+											start.addChild(take_ru);
+											start.addChild(ktok);
+											start.addChild(kth);
+											ktok.x = 200;
+											kth.x = 420;
+											kth.frame = 1;
+											start.removeChild(ktokuten);
+											start.removeChild(ttokuten);
+										}
+										break;
+								}	
+							} else if (data == 'enter') {
+								switch (now) {
+									case 0:
+										if(sentaku) {
+											start.removeChild(startback);
+											start.removeChild(kth);
+											if (ktsw) {
+												console.log("takenoko");
+												start.removeChild(take_ru);
+												start.removeChild(takenoko[i]);
+												gamescene = new CharaTop(0, 0, "takeback", 1440, 900, 0);
+												kita = new CharaTop(50, 50, "take", 200, 280, 0);
+												kttama = "taketama";
+											} else {
+												console.log("kinoko");
+												start.removeChild(kino_ru);
+												start.removeChild(kinoko[i]);
+												gamescene = new CharaTop(0, 0, "kinoback", 1440, 900, 0);
+												kita = new CharaTop(50, 50, "kino", 200, 280, 0);
+												kttama = "kinotama";
+											}
+											start.removeChild(ktok);
+											start.addChild(ktok);
+											ktok.x = 1200;
+											start.addChild(ehuki);
+											start.addChild(ehuki2);
+											//start.addChild(ehuki3);
+											add(1000, 450, 0);
+											add(1000, 175, 1);
+											//add(1000, 100, 2);
+											function add(xx, yy, a) {
+												ktstar[a] = new CharaTop(xx, yy, "star", 120, 120, a);
+												ktstar[a].scaleX = 1.5;
+												ktstar[a].scaleY = 1.5;
+												ktstar[a].on('enterframe',
+													function () {
+														for (var j = 0; j <= n; j++) {
+															if (this.intersect(icon[j])) {
+																icon[j].x = core.width + 10;
+																tamav.stop();
+																tamav.play();
+																mode = a;
+															}
+														}
+														if (mode == a) {
+															this.rotate(2);
+														}
+													});
+											}
+											now = 1;
+											remote.emit("emit_from_client", "start");
+										}
+										break;
+									case 1:
+										if (mode < 3) {
+											i++;
+											remote.removeEventListener("emit_from_server", gogame);
+											startv.stop();
+											gameinit(!ktsw, mode);
+										}
+										break;
+									default:
+										break;
 								}
-							} else if (data == 'enter' && sentaku) {
-								remote.emit("emit_from_client", "start");
-								i++;
-								remote.removeEventListener("emit_from_server", gogame);
-								startv.stop();
-								gameinit(!ktsw);
+							}
+							if (now == 1) {
+								tama(data, false);
 							}
 						}
 					}
